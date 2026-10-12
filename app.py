@@ -3,13 +3,13 @@ import streamlit as st
 import requests
 from langchain_groq import ChatGroq
 from langchain_core.tools import Tool
-from langchain_core.prompts import PromptTemplate
-from langchain.agents import AgentExecutor, create_react_agent
+from langchain.agents import AgentExecutor, create_tool_calling_agent
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_community.tools import DuckDuckGoSearchRun
 
 st.set_page_config(page_title="AI Agent", page_icon="🤖")
 st.title("🤖 AI Agent")
-st.caption("Powered by Groq, LangChain and ReAct")
+st.caption("Powered by Groq, LangChain and Tool Calling")
 
 GROQ_API_KEY = st.secrets.get("GROQ_API_KEY", "")
 WEATHER_API_KEY = st.secrets.get("WEATHER_API_KEY", "")
@@ -68,33 +68,18 @@ llm = ChatGroq(
     temperature=0
 )
 
-prompt = PromptTemplate.from_template("""
-Answer the user's question using tools when needed.
+prompt = ChatPromptTemplate.from_messages([
+    (
+        "system",
+        "You are a helpful AI agent. Use the Weather tool for current weather "
+        "questions and Search for current or external information. "
+        "Do not invent tool results. Keep answers clear and concise."
+    ),
+    ("human", "{input}"),
+    MessagesPlaceholder(variable_name="agent_scratchpad")
+])
 
-You have access to these tools:
-{tools}
-
-Use this format:
-
-Question: user's question
-Thought: what information is needed
-Action: one of [{tool_names}]
-Action Input: tool input
-Observation: tool result
-Thought: I now know the final answer
-Final Answer: answer to the user
-
-Rules:
-- Use Weather for current weather questions.
-- Use Search for external or up-to-date information.
-- Do not invent tool results.
-- Keep answers clear and concise.
-
-Question: {input}
-Thought:{agent_scratchpad}
-""")
-
-agent = create_react_agent(llm, tools, prompt)
+agent = create_tool_calling_agent(llm, tools, prompt)
 
 agent_executor = AgentExecutor(
     agent=agent,
@@ -135,3 +120,5 @@ if user_input:
         {"role": "assistant", "content": answer}
     )
 
+
+  
