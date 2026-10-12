@@ -29,7 +29,7 @@ def get_weather_data(city: str) -> str:
 @st.cache_resource
 def create_agent_executor():
     llm = ChatGoogleGenerativeAI(
-        model="gemini-2.5-flash",
+        model="gemini-3.8-flash",
         google_api_key=st.secrets["GOOGLE_API_KEY"],
         temperature=0
     )
